@@ -1,6 +1,7 @@
 package api
 
 import (
+	"btcwallet/internal/model"
 	"btcwallet/internal/store"
 	"context"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"github.com/nekitkas/router"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +18,8 @@ const (
 	ctxKeyUser ctxKey = iota
 	ctxKeyRequestID
 )
+
+const exchangeUrl = "http://api-cryptopia.adca.sh/v1/prices/ticker"
 
 type ctxKey int8
 
@@ -48,16 +52,10 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *server) configureRouter() {
 	s.router.Use(s.setRequestID, s.logRequest)
 
-	s.router.GET("/", s.test())
-}
-
-func (s *server) test() http.HandlerFunc {
-	type respond struct {
-		Message string `json:"message"`
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		s.respond(w, r, http.StatusOK, Response{Data: "HELLO"})
-	}
+	s.router.GET("/transactions", s.get())
+	s.router.GET("/balance", s.balance())
+	s.router.POST("/transfer", s.transfer())
+	s.router.POST("/add", s.add())
 }
 
 func (s *server) setRequestID(next http.Handler) http.Handler {
@@ -106,4 +104,31 @@ func (s *server) decode(r *http.Request, data interface{}) error {
 		return fmt.Errorf("decode json: %w", err)
 	}
 	return nil
+}
+
+func getExchangeRate(url string) (float64, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, fmt.Errorf("error making request %w", err)
+	}
+
+	var exchangeRates model.ExchangeRates
+	if err = json.NewDecoder(resp.Body).Decode(&exchangeRates); err != nil {
+		return 0, fmt.Errorf("error decoding response body %w", err)
+	}
+
+	var exchangeRate string
+	for _, rate := range exchangeRates.Data {
+		if rate.Symbol == "BTC/EUR" {
+			exchangeRate = rate.Value
+			break
+		}
+	}
+
+	exchangeRateFloat, err := strconv.ParseFloat(exchangeRate, 64)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing exchange rate %w", err)
+	}
+
+	return exchangeRateFloat, nil
 }
