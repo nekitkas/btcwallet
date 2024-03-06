@@ -3,14 +3,17 @@
 ## Available endpoints
 
 ### /transaction
+### Method GET
 
 Lists all transactions.
 
 ### /balance
+### Method GET
 
 Shows current balance.
 
 ### /transfer
+### Method POST
 
 Makes a transfer.
 
@@ -22,6 +25,7 @@ Request body:
 ```
 
 ### /add
+### Method POST
 Adds a transaction.
 
 Request body:
