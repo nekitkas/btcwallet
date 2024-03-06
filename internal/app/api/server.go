@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	ctxKeyUser ctxKey = iota
-	ctxKeyRequestID
+	ctxKeyRequestID ctxKey = iota
 )
 
 const exchangeUrl = "http://api-cryptopia.adca.sh/v1/prices/ticker"

@@ -1,5 +1,6 @@
 {
   "port": ":8080",
-  "database_url": "host=localhost dbname=btcwallet_dev sslmode=disable",
-  "database_driver" : "postgres"
+  "database_driver": "sqlite3",
+  "database_url": "internal/db/database.db",
+  "database_migrations": "migrations"
 }

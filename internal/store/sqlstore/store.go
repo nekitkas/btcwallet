@@ -3,7 +3,6 @@ package sqlstore
 import (
 	"btcwallet/internal/store"
 	"database/sql"
-	_ "github.com/lib/pq"
 )
 
 type Store struct {

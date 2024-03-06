@@ -3,8 +3,10 @@ package sqlstore
 import (
 	"btcwallet/internal/model"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"strings"
+	"time"
 )
 
 type TransactionRepository struct {
@@ -12,7 +14,7 @@ type TransactionRepository struct {
 }
 
 func (t TransactionRepository) Get() (*[]model.Transaction, error) {
-	query := `SELECT * FROM transactions`
+	query := `SELECT id, amount, spent, created_at FROM transactions`
 	rows, err := t.store.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -37,7 +39,13 @@ func (t TransactionRepository) Get() (*[]model.Transaction, error) {
 }
 
 func (t TransactionRepository) Transfer(amount float64) error {
-	rows, err := t.store.db.Query("SELECT id, amount FROM transactions WHERE spent = FALSE ORDER BY created_at FOR UPDATE")
+	tx, err := t.store.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query("SELECT id, amount FROM transactions WHERE spent = 0 ORDER BY created_at")
 	if err != nil {
 		return err
 	}
@@ -58,7 +66,6 @@ func (t TransactionRepository) Transfer(amount float64) error {
 			break
 		}
 	}
-
 	if err = rows.Err(); err != nil {
 		return err
 	}
@@ -67,27 +74,34 @@ func (t TransactionRepository) Transfer(amount float64) error {
 		return errors.New("not enough balance or transfer amount is too small")
 	}
 
-	_, err = t.store.db.Exec("UPDATE transactions SET spent = TRUE WHERE id = ANY($1)", pq.Array(transactionIDs))
-	if err != nil {
+	placeholders := make([]string, len(transactionIDs))
+	values := make([]interface{}, len(transactionIDs))
+	for i, id := range transactionIDs {
+		placeholders[i] = "?"
+		values[i] = id
+	}
+
+	placeholdersStr := strings.Join(placeholders, ", ")
+	updateQuery := fmt.Sprintf("UPDATE transactions SET spent = 1 WHERE id IN (%s)", placeholdersStr)
+	if _, err = tx.Exec(updateQuery, values...); err != nil {
 		return err
 	}
 
 	leftover := totalUnspent - amount
 	if leftover >= 0.00001 {
-		newTransactionID := uuid.New().String()
-		_, err = t.store.db.Exec("INSERT INTO transactions (id, amount, spent, created_at) VALUES ($1, $2, FALSE, NOW())", newTransactionID, leftover)
-		if err != nil {
+		id := uuid.New().String()
+		if _, err = tx.Exec("INSERT INTO transactions (id, amount, spent, created_at) VALUES (?, ?, 0, ?)",
+			id, leftover, time.Now().Format("2006-01-02 15:04:05")); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (t TransactionRepository) Balance() (float64, error) {
 	var totalAmount float64
-	if err := t.store.db.QueryRow(
-		`SELECT SUM(amount) AS total_amount FROM transactions WHERE spent = false;`).Scan(&totalAmount); err != nil {
+	if err := t.store.db.QueryRow(`SELECT IFNULL(SUM(amount), 0) AS total_amount FROM transactions WHERE spent = 0`).Scan(&totalAmount); err != nil {
 		return 0, err
 	}
 
@@ -95,11 +109,10 @@ func (t TransactionRepository) Balance() (float64, error) {
 }
 
 func (t TransactionRepository) Add(transaction *model.Transaction, amount float64) error {
-	_, err := t.store.db.Exec(`INSERT INTO transactions (id, amount, spent, created_at) VALUES ($1,$2,$3,$4)`,
+	_, err := t.store.db.Exec(`INSERT INTO transactions (id, amount, spent, created_at) VALUES (?, ?, ?, datetime('now'))`,
 		transaction.ID,
 		amount,
 		transaction.Spent,
-		transaction.CreatedAt,
 	)
 	if err != nil {
 		return err
