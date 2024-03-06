@@ -9,7 +9,6 @@ import (
 type Store struct {
 	db              *sql.DB
 	transactionRepo *TransactionRepository
-	walletRepo      *WalletRepository
 }
 
 func New(db *sql.DB) *Store {
@@ -24,12 +23,4 @@ func (s *Store) Transaction() store.TransactionRepository {
 	}
 
 	return &TransactionRepository{store: s}
-}
-
-func (s *Store) Wallet() store.WalletRepository {
-	if s.walletRepo != nil {
-		return s.walletRepo
-	}
-
-	return &WalletRepository{store: s}
 }
