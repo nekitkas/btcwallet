@@ -19,7 +19,7 @@ Makes a transfer.
 Request body:
 ```json
 {
-  "amount": "<float or int>"
+  "amount": float or int
 }
 ```
 
@@ -29,7 +29,7 @@ Adds a transaction.
 Request body:
 ```json
 {
-  "amount": "<float or int>"
+  "amount": float or int
 }
 ```
 
