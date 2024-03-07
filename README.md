@@ -1,5 +1,7 @@
 # Backend Services & API Internship Assignment
 
+Api is configured to run on localhost
+
 ## Available endpoints
 
 ### /transactions GET
