@@ -49,9 +49,9 @@ sudo docker build -t api .
 
 sudo docker run -p 8080:8080 api
 ```
-
-Make sure to replace <container_name> with the actual name of the container.
+To stop container
 
 ```bash
 sudo docker stop <container_name>
 ```
+Make sure to replace <container_name> with the actual name of the container.
