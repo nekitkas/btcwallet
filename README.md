@@ -1,19 +1,18 @@
 # Backend Services & API Internship Assignment
 
+Api is configured to run on localhost
+
 ## Available endpoints
 
-### /transaction
-### Method GET
+### /transactions GET
 
 Lists all transactions.
 
-### /balance
-### Method GET
+### /balance GET
 
 Shows current balance.
 
-### /transfer
-### Method POST
+### /transfer POST
 
 Makes a transfer.
 
@@ -24,8 +23,7 @@ Request body:
 }
 ```
 
-### /add
-### Method POST
+### /add POST
 Adds a transaction.
 
 Request body:
@@ -36,20 +34,20 @@ Request body:
 ```
 
 ## Usage
-
-To build and run the API locally:
+To build and run the API locally, Go version 1.22 is required
 ```bash
 make; build/api
 ```
 
 Or with Docker:
-
 ```bash
 sudo docker build -t api .
 
 sudo docker run -p 8080:8080 api
 ```
+
 To stop container
+
 
 ```bash
 sudo docker stop <container_name>
