@@ -15,6 +15,7 @@ Shows current balance.
 ### /transfer POST
 
 Makes a transfer.
+Amount in EUR
 
 Request body:
 ```json
@@ -25,6 +26,7 @@ Request body:
 
 ### /add POST
 Adds a transaction.
+Amount in EUR
 
 Request body:
 ```json
